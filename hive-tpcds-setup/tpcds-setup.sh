@@ -13,10 +13,10 @@ function runcommand {
 	fi
 }
 
-if [ ! -f target/hive-tpcds-setup-0.1-SNAPSHOT.jar ]; then
-	echo "Please build the data generator with ./tpcds-build.sh first"
-	exit 1
-fi
+#if [ ! -f target/hive-tpcds-setup-0.1-SNAPSHOT.jar ]; then
+#	echo "Please build the data generator with ./tpcds-build.sh first"
+#	exit 1
+#fi
 
 if [ "X$HIVE_BIN" = "X" ]; then
   HIVE_BIN=`which hive`
@@ -57,7 +57,7 @@ if [ $SCALE -eq 1 ]; then
 fi
 
 # Do the actual data generation.
-hdfs dfs -mkdir -p ${DIR}
+hdfs dfs -mkdir -p ${DIR}/${SCALE}
 hdfs dfs -ls ${DIR}/${SCALE} > /dev/null
 if [ $? -ne 0 ]; then
 	echo "Generating data at scale factor $SCALE."
@@ -100,8 +100,9 @@ REDUCERS=$((test ${SCALE} -gt ${MAX_REDUCERS} && echo ${MAX_REDUCERS}) || echo $
 for t in ${DIMS}
 do
 	COMMAND="$HIVE_BIN -f ddl-tpcds/bin/${t}.sql \
-	    --hivevar DB=${DATABASE} --hivevar SOURCE=${TXT_DATABASE} \
-            --hivevar SCALE=${SCALE} \
+	    --hivevar DB=${DATABASE} \
+	    --hivevar SOURCE=${TXT_DATABASE} \
+      --hivevar SCALE=${SCALE} \
 	    --hivevar REDUCERS=${REDUCERS} \
 	    --hivevar FILE=${FORMAT}"
 	echo -e "${t}:\n\t@$COMMAND $SILENCE && echo 'Optimizing table $t ($i/$total).'" >> $LOAD_FILE
@@ -111,9 +112,12 @@ for t in ${FACTS}
 do
 	COMMAND="$HIVE_BIN -f ddl-tpcds/bin/${t}.sql \
 	    --hivevar DB=${DATABASE} \
-            --hivevar SCALE=${SCALE} \
-	    --hivevar SOURCE=${TXT_DATABASE} --hivevar BUCKETS=${BUCKETS} \
-	    --hivevar RETURN_BUCKETS=${RETURN_BUCKETS} --hivevar REDUCERS=${REDUCERS} --hivevar FILE=${FORMAT}"
+      --hivevar SCALE=${SCALE} \
+	    --hivevar SOURCE=${TXT_DATABASE} \
+	    --hivevar BUCKETS=${BUCKETS} \
+	    --hivevar RETURN_BUCKETS=${RETURN_BUCKETS} \
+	    --hivevar REDUCERS=${REDUCERS} \
+	    --hivevar FILE=${FORMAT}"
 	echo -e "${t}:\n\t@$COMMAND $SILENCE && echo 'Optimizing table $t ($i/$total).'" >> $LOAD_FILE
 	i=`expr $i + 1`
 done

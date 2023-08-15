@@ -1,7 +1,8 @@
 package spark3.sql
 
-import org.apache.hudi.com.beust.jcommander.JCommander
+import com.beust.jcommander.JCommander
 import org.apache.spark.sql.SparkSession
+
 import scala.io.Source
 
 object SqlWrapper {
