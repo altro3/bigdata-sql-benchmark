@@ -11,31 +11,47 @@ object SqlWrapper {
     val opt = new CliOptions
     val cmd = new JCommander(opt, null, args: _*)
 
-    val spark = SparkSession
-      .builder()
+    val spark = SparkSession.builder()
       .appName("Spark Hudi Wrapper")
-//      .config("spark.master", "local")
+      .config("spark.master", "local[*]")
+      .config("spark.default.parallelism", "4")
+      .config("spark.sql.shuffle.partitions", "4")
+      .config("spark.driver.maxResultSize", "2g")
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.hudi.catalog.HoodieCatalog")
       .config("spark.sql.extensions", "org.apache.spark.sql.hudi.HoodieSparkSessionExtension")
-      .enableHiveSupport()
+//      .config("spark.sql.hive.convertMetastoreParquet", "false")
+      .config("spark.hadoop.mapred.output.compress", "true")
+      .config("spark.hadoop.mapred.output.compression.codec", "true")
+      .config("spark.hadoop.mapred.output.compression.codec", "org.apache.hadoop.io.compress.GzipCodec")
+      .config("spark.hadoop.mapred.output.compression.type", "BLOCK")
+//      .config("hoodie.datasource.hive_sync.jdbcurl", "jdbc:hive2://localhost:10000")
+//      .enableHiveSupport()
       .getOrCreate()
-//    import spark.implicits._
+
+    spark.sparkContext.setLogLevel("WARN")
+    //    import spark.implicits._
     spark.sparkContext.hadoopConfiguration.addResource("core-site.xml")
     spark.sparkContext.hadoopConfiguration.addResource("hdfs-site.xml")
 
-    val start = System.nanoTime()
+    var df = spark.read.option("delimiter", "|")
+      .csv("/data/2/call_center")
 
-    val sqlFileName = s"q${opt.queries}.sql"
+    println(s"Read df ${df.count()}")
+
+/*
+    val sqlFileName = s"q0.sql"
 
     val path: String = "queries/" + sqlFileName
     val tpsSql = Source.fromResource(path).mkString
     spark.sql(s"use ${opt.database}")
     println(s"Database: ${opt.database}, SQL file: $sqlFileName")
+    val start = System.nanoTime()
     val df = spark.sql(tpsSql.stripMargin)
+    val elapsed = (System.nanoTime() - start) / 1000000000D
     df.show()
-    val elapsed = (System.nanoTime() - start) / 1000000000.0
     println(s"Elapsed time: $elapsed seconds")
+*/
     spark.stop()
   }
 }
