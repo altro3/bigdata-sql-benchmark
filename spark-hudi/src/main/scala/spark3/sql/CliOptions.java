@@ -1,6 +1,6 @@
 package spark3.sql;
 
-import org.apache.hudi.com.beust.jcommander.Parameter;
+import com.beust.jcommander.Parameter;
 
 import java.io.Serializable;
 
